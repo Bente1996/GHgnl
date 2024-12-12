@@ -6,20 +6,29 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/09 14:59:41 by bde-koni          #+#    #+#             */
-/*   Updated: 2024/12/11 19:26:28 by bde-koni         ###   ########.fr       */
+/*   Updated: 2024/12/12 13:17:02 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdio.h>
 
 char	*get_next_line(int fd)
 {	
+	ssize_t	i;
+	static char	*storage[i];
 
+	i = 0;
+	
+	if (fd < 0 || i <= 0)
+		return NULL;
 	if (storage == NULL)
-		free(storage)
+	{
+		free(storage);
 		return (NULL);
+	}
 	return extract_line(&storage[fd]);
 }
 
@@ -93,18 +102,3 @@ static char *extract_line(char **storage) {
 
     return line;
 }
-
-
-
-// char *get_next_line(int fd) {
-//     static char *storage[MAX_FD];
-
-//     if (fd < 0 || BUFFER_SIZE <= 0)
-//         return NULL;
-
-//     storage[fd] = read_and_store(fd, storage[fd]);
-//     if (!storage[fd])
-//         return NULL;
-
-//     return extract_line(&storage[fd]);
-// }
