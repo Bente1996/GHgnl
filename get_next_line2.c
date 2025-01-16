@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/12 13:04:17 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/07 16:08:30 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/14 16:06:42 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,15 +14,21 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include "get_next_line.h"
+#include "limits.h"
 
 char	*get_next_line(int fd) //returns 1 line
 {
 	static char	buffer[BUFFER_SIZE + 1];
 	char	*line;
 
-	line = line_alloc(1); //allocate room for line at least 1 for /0, in buff_to_line we expand
-	if (line == NULL) // weg??
+	if (fd < 0 || fd > OPEN_MAX || read(fd, 0, 0) == -1 || BUFFER_SIZE < 1) //met buffer 0 kom je nooit door bestand
 		return (NULL);
+	// line = line_alloc(1); //allocate room for line at least 1 for /0, in buff_to_line we expand
+	// if (line == NULL) // weg??
+	// 	return (NULL);
+	line = NULL;
 	if (buffer != NULL) //if there is already something in the buffer from last call
 	{
 		line = buff_to_line(buffer, line); //add leftovers to new line, what if multiple lines? we dont call read again
@@ -43,9 +49,12 @@ char	*update_line(char	*buffer, char	*line, int fd)
 	bytes_read = 1; //set to 1 to enter loop
 	while (delim_len(line, '\n') == 0 && bytes_read > 0) //update line and read into buffer aslong as there is something in txt an no \n in line yet
 	{
-		bytes_read = read(fd, buffer, [BUFFER_SIZE + 1]); //fill up buffer
+		bytes_read = read(fd, buffer, BUFFER_SIZE); //fill up buffer, no buffersize +1?
 		if (bytes_read == -1)
+		{
+			free(buffer);
 			return (NULL);
+		}
 		buffer[bytes_read] = '\0'; // \0 buffer
 		line = buff_to_line(buffer, line); //Append buffer content to line
 		if (line == NULL)
@@ -59,14 +68,20 @@ char	*buff_to_line(char	*buffer, char	*line) // add new content to line
 	char	*new_line;
 	size_t	line_len;
 	size_t	buff_add;
-
-	line_len = delim_len(line, '\0'); // length of line until \0 (current line)
+	
+	if (line == NULL)
+		line_len = 0;
+	else
+		line_len = delim_len(line, '\0'); // length of line until \0 (current line)
 	buff_add = delim_len(buffer, '\n'); // length of buff until \n
-	if (buff_add = 0)
+	if (buff_add == 0)
 		buff_add = delim_len(buffer, '\0');
 	new_line = line_alloc(line_len + buff_add + 1); //allocate room for new line
 	if (new_line == NULL)
+	{
 		return (NULL);
+		free(new_line); //nodig?
+	}
 	buff_line_join(new_line, line, buffer, buff_add); //Copy all characters up to and including the \n (or until the buffer ends) to new line
 	free(line); //free old line, new line basically becomes old line
 	return (new_line); //return updated line
@@ -138,13 +153,13 @@ size_t	delim_len(char	*buffer, char delim) // uitwerken: return? waarom
 	return (i); // represents length of the string so no +1
 }
 
-char	*line_alloc(size_t length);
+char	*line_alloc(size_t length)
 {
 	char	*line;
 	size_t	i;
 
 	i = 0;
-	line = malloc(sizeof(char) * length);
+	line = malloc(sizeof(char) * length); //+1 niet nodig want je alloceert al geoeg ruimte
 	if (line == NULL)
 		return (NULL);
 	while (i < length)
@@ -153,4 +168,18 @@ char	*line_alloc(size_t length);
 		i++;
 	}
 	return (line);
+}
+
+int	main(void)
+{
+	int fd = open("fd.txt", O_RDONLY);
+	char *line = get_next_line(fd);
+	for (size_t i = 0; i < 5; i++)
+	{
+		printf("%s", line);
+		free(line);
+		line = get_next_line(fd);
+	}
+	close(fd);
+	return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/31 19:19:31 by mde-cloe          #+#    #+#             */
-/*   Updated: 2024/12/19 14:09:56 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/15 14:58:41 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ char	*get_next_line(int fd)
 	if (!line)
 		return (NULL);
 	buff_update(buff);
-	if (!*line)
+	if (line[0] == '\0')
 		return (free(line), NULL);
 	return (line);
 }
@@ -162,4 +162,19 @@ char	*stralloc(size_t space)
 		i++;
 	}
 	return (str);
+}
+
+int	main(void)
+{
+	int fd	= open("text.txt", O_RDONLY);
+	char *line = get_next_line(fd);
+	for (int i = 0; i < 20; i++)
+	{
+	printf("%s", line);
+	free(line);
+	line = get_next_line(fd);
+	}
+	close(fd);
+	system("leaks a.out");
+	return 0;
 }
