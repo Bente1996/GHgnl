@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/09 15:25:40 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/08 15:26:29 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/16 15:13:31 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,12 +17,17 @@
 #  define BUFFER_SIZE 1024
 # endif
 
+# ifndef OPEN_MAX
+#  define OPEN_MAX 256
+# endif
+
+# include <stddef.h>
+
 char	*get_next_line(int fd);
-char	*update_line(char	*buffer, char	*line, int fd);
-char	*buff_to_line(char	*buffer, char	*line);
-void	buff_line_join(char *new_line, char *line, char *buffer, size_t buff_add);
-void	move_buff(char *buffer);
-size_t	delim_len(char	*buffer, char delim);
-char	*line_alloc(size_t length);
+char	*buff_to_storage(char *buffer);
+char	*storage_to_line(char *storage, char *old_line);
+size_t	ft_strlen(char *str);
+int		nl_check(char *line);
+char	*make_line(int fd, char *buffer);
 
 #endif
