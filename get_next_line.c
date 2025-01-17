@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:14:02 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/17 14:52:33 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/17 18:41:00 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE];
 	
-
 	if (fd < 0 || fd > OPEN_MAX || read(fd, 0, 0) == -1 || BUFFER_SIZE < 1) //met buffer 0 kom je nooit door bestand
 		return (NULL);
 	return (make_line(fd, buffer));
@@ -50,7 +49,9 @@ char	*buff_to_storage(char *buffer)
 		i++;
 		j++;
 	}
-	storage[j + 1] = '\0'; // terminate storage
+	if (j > 0)
+		j++;
+	storage[j] = '\0'; // terminate storage
 	return (storage); // hele of stukje buffer wordt opgestuurd
 }
 
@@ -58,9 +59,17 @@ char	*make_line(int fd, char *buffer) // returns hele line
 {
 	char	*storage;
 	char	*line; //groeit
+	ssize_t	bytes_read;
+	size_t	i;
 
 	line = NULL;
-	while (read(fd, buffer, BUFFER_SIZE) > 0) // zolang er wat te lezen valt
+	bytes_read = 1;
+	i = 0;
+	while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
+		i++;
+	if (i == BUFFER_SIZE)
+		bytes_read = read(fd, buffer, BUFFER_SIZE);
+	while (bytes_read > 0)
 	{
 		storage = buff_to_storage(buffer); // we krijgen wat storage binnen
 		if (storage == NULL)
@@ -68,8 +77,9 @@ char	*make_line(int fd, char *buffer) // returns hele line
 		line = storage_to_line(storage, line); //plak steeds een stukje storage aan groeiende line
 		if (line == NULL)
 			return (NULL);
-		if (nl_check(line) == 1) // return wanneer \n gevonden is
+		if (nl_check(line) == 1) // return wanneer \n gevonden is, in while loop verchil??
 			break;
+		bytes_read = read(fd, buffer, BUFFER_SIZE);
 	}
 	return (line);
 }
@@ -106,7 +116,6 @@ char	*storage_to_line(char *storage, char *old_line) // join en alloceer // old 
 		j++;
 	}
 	line[i + j] = '\0'; // terminate line
-	printf("line tot nu toe == %s\n", line);
 	free(storage); //weg halen wat we hebben toegevoegd
 	return (line); // return geupdatete line
 }
@@ -145,6 +154,7 @@ int	main()
 		free(line);
 		line = get_next_line(fd);
 	}
+	free(line);
 	close(fd);
 	return (0);
 }
