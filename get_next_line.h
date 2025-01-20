@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/09 15:25:40 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/16 15:13:31 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/20 18:06:57 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 # endif
 
 # include <stddef.h>
+# include <aio.h>
 
 char	*get_next_line(int fd);
 char	*buff_to_storage(char *buffer);

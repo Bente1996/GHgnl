@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:14:02 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/17 18:41:00 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/20 18:49:43 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,13 +44,13 @@ char	*buff_to_storage(char *buffer)
 	{
 		storage[j] = buffer[i];
 		buffer[i] = '\0';
-		if (storage[j] == '\n')
-			break; // eerste stukje van buffer gereturned, tot dat punt zijn nu \0's
 		i++;
 		j++;
+		if (storage[j - 1] == '\n')
+			break; // eerste stukje van buffer gereturned, tot dat punt zijn nu \0's
 	}
-	if (j > 0)
-		j++;
+	// if (j > 0 && storage[j] == '\n')
+	// 	j++;
 	storage[j] = '\0'; // terminate storage
 	return (storage); // hele of stukje buffer wordt opgestuurd
 }
@@ -67,8 +67,12 @@ char	*make_line(int fd, char *buffer) // returns hele line
 	i = 0;
 	while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
 		i++;
-	if (i == BUFFER_SIZE)
+	if (i == BUFFER_SIZE) // wanneer hele buffer gevuld is met \0s
+	{
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_read == -1) // nodig?
+			return (NULL);
+	}
 	while (bytes_read > 0)
 	{
 		storage = buff_to_storage(buffer); // we krijgen wat storage binnen
@@ -80,6 +84,11 @@ char	*make_line(int fd, char *buffer) // returns hele line
 		if (nl_check(line) == 1) // return wanneer \n gevonden is, in while loop verchil??
 			break;
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_read == -1) // nodig?
+		{
+			free(line);
+			return (NULL);
+		}
 	}
 	return (line);
 }
@@ -144,17 +153,17 @@ int	nl_check(char *line)
 	return (0);
 }
 
-int	main()
-{
-	int fd = open("fd.txt", O_RDONLY);
-	char *line = get_next_line(fd);
-	for (size_t i = 0; i < 5; i++)
-	{
-		printf("%s", line);
-		free(line);
-		line = get_next_line(fd);
-	}
-	free(line);
-	close(fd);
-	return (0);
-}
+// int	main()
+// {
+// 	int fd = open("fd.txt", O_RDONLY);
+// 	char *line = get_next_line(fd);
+// 	for (size_t i = 0; i < 30; i++)
+// 	{
+// 		printf("%s", line);
+// 		free(line);
+// 		line = get_next_line(fd);
+// 	}
+// 	free(line);
+// 	close(fd);
+// 	return (0);
+// }
