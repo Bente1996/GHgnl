@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:14:02 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/20 18:49:43 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/21 15:50:46 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE];
 	
-	if (fd < 0 || fd > OPEN_MAX || read(fd, 0, 0) == -1 || BUFFER_SIZE < 1) //met buffer 0 kom je nooit door bestand
+	if (fd < 0 || fd > OPEN_MAX  || BUFFER_SIZE < 1) //met buffer 0 kom je nooit door bestand
 		return (NULL);
 	return (make_line(fd, buffer));
 }
@@ -49,11 +49,10 @@ char	*buff_to_storage(char *buffer)
 		if (storage[j - 1] == '\n')
 			break; // eerste stukje van buffer gereturned, tot dat punt zijn nu \0's
 	}
-	// if (j > 0 && storage[j] == '\n')
-	// 	j++;
 	storage[j] = '\0'; // terminate storage
 	return (storage); // hele of stukje buffer wordt opgestuurd
 }
+
 
 char	*make_line(int fd, char *buffer) // returns hele line
 {
@@ -63,15 +62,19 @@ char	*make_line(int fd, char *buffer) // returns hele line
 	size_t	i;
 
 	line = NULL;
-	bytes_read = 1;
+	bytes_read = 0;
 	i = 0;
 	while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
 		i++;
 	if (i == BUFFER_SIZE) // wanneer hele buffer gevuld is met \0s
 	{
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		if (bytes_read == -1) // nodig?
+		printf("i == %li and buffsize == %ianddddd bytes_read ==%lli\n", i, BUFFER_SIZE, bytes_read);
+		if (bytes_read == -1)
+		{
+			//ft_bzero(buffer, BUFFER_SIZE);
 			return (NULL);
+		}
 	}
 	while (bytes_read > 0)
 	{
@@ -84,13 +87,27 @@ char	*make_line(int fd, char *buffer) // returns hele line
 		if (nl_check(line) == 1) // return wanneer \n gevonden is, in while loop verchil??
 			break;
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		if (bytes_read == -1) // nodig?
+		if (bytes_read == -1)
 		{
+			//ft_bzero(buffer, BUFFER_SIZE);
 			free(line);
 			return (NULL);
 		}
 	}
 	return (line);
+}
+
+void	ft_bzero(void *s, size_t n)
+{
+	unsigned char	*str;
+
+	str = (unsigned char *)s;
+	while (n > 0)
+	{
+		*str = '\0';
+		str++;
+		n--;
+	}
 }
 
 char	*storage_to_line(char *storage, char *old_line) // join en alloceer // old line freeen?
@@ -153,17 +170,30 @@ int	nl_check(char *line)
 	return (0);
 }
 
-// int	main()
+int	main()
+{
+	int fd = open("fd.txt", O_RDONLY);
+	char *line = get_next_line(fd);
+	for (size_t i = 0; i < 30; i++)
+	{
+		printf("%s", line);
+		free(line);
+		line = get_next_line(fd);
+	}
+	free(line);
+	close(fd);
+	return (0);
+}
+
+// int main()
 // {
+// 	char *line;
 // 	int fd = open("fd.txt", O_RDONLY);
-// 	char *line = get_next_line(fd);
-// 	for (size_t i = 0; i < 30; i++)
-// 	{
-// 		printf("%s", line);
-// 		free(line);
-// 		line = get_next_line(fd);
-// 	}
+
+// 	line = get_next_line(fd);
+// 	printf("%s", line);
 // 	free(line);
-// 	close(fd);
-// 	return (0);
+// 	line = get_next_line(fd);
+// 	printf("%s", line);
+	
 // }

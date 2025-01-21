@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/09 15:25:40 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/20 18:06:57 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/21 15:08:45 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 # define GET_NEXT_LINE_H
 
 # ifndef BUFFER_SIZE
-#  define BUFFER_SIZE 1024
+#  define BUFFER_SIZE 6
 # endif
 
 # ifndef OPEN_MAX
