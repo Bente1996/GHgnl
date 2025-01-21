@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:14:02 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/21 15:50:46 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/21 17:18:05 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,29 +53,43 @@ char	*buff_to_storage(char *buffer)
 	return (storage); // hele of stukje buffer wordt opgestuurd
 }
 
-
-char	*make_line(int fd, char *buffer) // returns hele line
+ssize_t	ft_read(int fd, char *buffer, ssize_t bytes_read)
 {
-	char	*storage;
-	char	*line; //groeit
-	ssize_t	bytes_read;
 	size_t	i;
 
-	line = NULL;
-	bytes_read = 0;
 	i = 0;
 	while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
 		i++;
 	if (i == BUFFER_SIZE) // wanneer hele buffer gevuld is met \0s
 	{
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		printf("i == %li and buffsize == %ianddddd bytes_read ==%lli\n", i, BUFFER_SIZE, bytes_read);
-		if (bytes_read == -1)
-		{
-			//ft_bzero(buffer, BUFFER_SIZE);
-			return (NULL);
-		}
+		// if (bytes_read == -1)
+		// 	return (NULL);
 	}
+	return (bytes_read);
+}
+
+char	*make_line(int fd, char *buffer) // returns hele line
+{
+	char	*storage;
+	char	*line; //groeit
+	ssize_t	bytes_read;
+	//size_t	i;
+
+	line = NULL;
+	bytes_read = 1;
+	// i = 0;
+	// while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
+	// 	i++;
+	// if (i == BUFFER_SIZE) // wanneer hele buffer gevuld is met \0s
+	// {
+	// 	bytes_read = read(fd, buffer, BUFFER_SIZE);
+	// 	if (bytes_read == -1)
+	// 		return (NULL);
+	// }
+	bytes_read = ft_read(fd, buffer, bytes_read);
+	if (bytes_read == -1)
+		return (NULL);
 	while (bytes_read > 0)
 	{
 		storage = buff_to_storage(buffer); // we krijgen wat storage binnen
@@ -89,25 +103,11 @@ char	*make_line(int fd, char *buffer) // returns hele line
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
 		if (bytes_read == -1)
 		{
-			//ft_bzero(buffer, BUFFER_SIZE);
 			free(line);
 			return (NULL);
 		}
 	}
 	return (line);
-}
-
-void	ft_bzero(void *s, size_t n)
-{
-	unsigned char	*str;
-
-	str = (unsigned char *)s;
-	while (n > 0)
-	{
-		*str = '\0';
-		str++;
-		n--;
-	}
 }
 
 char	*storage_to_line(char *storage, char *old_line) // join en alloceer // old line freeen?
@@ -174,7 +174,7 @@ int	main()
 {
 	int fd = open("fd.txt", O_RDONLY);
 	char *line = get_next_line(fd);
-	for (size_t i = 0; i < 30; i++)
+	while (line)
 	{
 		printf("%s", line);
 		free(line);
