@@ -6,7 +6,7 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:14:02 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/21 17:18:05 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/21 18:49:05 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,10 +21,12 @@
 char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE];
+	ssize_t	bytes_read;
 	
+	bytes_read = 1; // niet 0 want hij moet na 1e call nogsteeds de loop inkunnen
 	if (fd < 0 || fd > OPEN_MAX  || BUFFER_SIZE < 1) //met buffer 0 kom je nooit door bestand
 		return (NULL);
-	return (make_line(fd, buffer));
+	return (make_line(fd, buffer, bytes_read));
 }
 
 char	*buff_to_storage(char *buffer)
@@ -53,7 +55,7 @@ char	*buff_to_storage(char *buffer)
 	return (storage); // hele of stukje buffer wordt opgestuurd
 }
 
-ssize_t	ft_read(int fd, char *buffer, ssize_t bytes_read)
+ssize_t	read_if_buff_empty(int fd, char *buffer, ssize_t bytes_read)
 {
 	size_t	i;
 
@@ -61,34 +63,18 @@ ssize_t	ft_read(int fd, char *buffer, ssize_t bytes_read)
 	while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
 		i++;
 	if (i == BUFFER_SIZE) // wanneer hele buffer gevuld is met \0s
-	{
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		// if (bytes_read == -1)
-		// 	return (NULL);
-	}
 	return (bytes_read);
 }
 
-char	*make_line(int fd, char *buffer) // returns hele line
+char	*make_line(int fd, char *buffer, ssize_t bytes_read) // returns hele line
 {
 	char	*storage;
 	char	*line; //groeit
-	ssize_t	bytes_read;
-	//size_t	i;
 
 	line = NULL;
-	bytes_read = 1;
-	// i = 0;
-	// while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
-	// 	i++;
-	// if (i == BUFFER_SIZE) // wanneer hele buffer gevuld is met \0s
-	// {
-	// 	bytes_read = read(fd, buffer, BUFFER_SIZE);
-	// 	if (bytes_read == -1)
-	// 		return (NULL);
-	// }
-	bytes_read = ft_read(fd, buffer, bytes_read);
-	if (bytes_read == -1)
+	bytes_read = read_if_buff_empty(fd, buffer, bytes_read);
+	if (bytes_read  == -1)
 		return (NULL);
 	while (bytes_read > 0)
 	{
@@ -110,15 +96,11 @@ char	*make_line(int fd, char *buffer) // returns hele line
 	return (line);
 }
 
-char	*storage_to_line(char *storage, char *old_line) // join en alloceer // old line freeen?
+char	*line_alloc(char *storage, char* old_line)
 {
 	char	*line;
-	size_t	i;
-	size_t	j;
 	size_t	line_len;
 
-	i = 0;
-	j = 0;
 	if (old_line == NULL)
 		line_len = 0;
 	else
@@ -130,6 +112,30 @@ char	*storage_to_line(char *storage, char *old_line) // join en alloceer // old 
 		free(storage);
 		return (NULL);
 	}
+	return (line);
+}
+
+char	*storage_to_line(char *storage, char *old_line) // join en alloceer
+{
+	char	*line;
+	size_t	i;
+	size_t	j;
+	// size_t	line_len;
+
+	i = 0;
+	j = 0;
+	// if (old_line == NULL)
+	// 	line_len = 0;
+	// else
+	// 	line_len = ft_strlen(old_line);
+	// line = malloc(line_len + ft_strlen(storage) + 1); // line neemt huidige lengte van line + storage + \0 aan
+	// if (line == NULL)
+	// {
+	// 	free(old_line);
+	// 	free(storage);
+	// 	return (NULL);
+	// }
+	line = line_alloc(storage, old_line);
 	while (old_line != NULL && old_line[i] != '\0')
 	{
 		line[i] = old_line[i];
@@ -170,20 +176,20 @@ int	nl_check(char *line)
 	return (0);
 }
 
-int	main()
-{
-	int fd = open("fd.txt", O_RDONLY);
-	char *line = get_next_line(fd);
-	while (line)
-	{
-		printf("%s", line);
-		free(line);
-		line = get_next_line(fd);
-	}
-	free(line);
-	close(fd);
-	return (0);
-}
+// int	main()
+// {
+// 	int fd = open("fd.txt", O_RDONLY);
+// 	char *line = get_next_line(fd);
+// 	while (line)
+// 	{
+// 		printf("%s", line);
+// 		free(line);
+// 		line = get_next_line(fd);
+// 	}
+// 	free(line);
+// 	close(fd);
+// 	return (0);
+// }
 
 // int main()
 // {
