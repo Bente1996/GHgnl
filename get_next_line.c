@@ -6,27 +6,50 @@
 /*   By: bde-koni <bde-koni@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:14:02 by bde-koni          #+#    #+#             */
-/*   Updated: 2025/01/21 18:49:05 by bde-koni         ###   ########.fr       */
+/*   Updated: 2025/01/29 13:03:13 by bde-koni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
 #include "get_next_line.h"
-#include "limits.h"
 
 char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE];
-	ssize_t	bytes_read;
-	
-	bytes_read = 1; // niet 0 want hij moet na 1e call nogsteeds de loop inkunnen
-	if (fd < 0 || fd > OPEN_MAX  || BUFFER_SIZE < 1) //met buffer 0 kom je nooit door bestand
+	ssize_t		bytes_read;
+
+	bytes_read = 1;
+	if (fd < 0 || fd > OPEN_MAX || BUFFER_SIZE < 1)
 		return (NULL);
 	return (make_line(fd, buffer, bytes_read));
+}
+
+char	*make_line(int fd, char *buffer, ssize_t bytes_read)
+{
+	char	*storage;
+	char	*line;
+
+	line = NULL;
+	bytes_read = read_if_buff_empty(fd, buffer, bytes_read);
+	if (bytes_read == -1)
+		return (NULL);
+	while (bytes_read > 0)
+	{
+		storage = buff_to_storage(buffer);
+		if (storage == NULL)
+			return (free(line), NULL);
+		line = storage_to_line(storage, line);
+		if (line == NULL)
+			return (NULL);
+		if (nl_check(line) == true)
+			break ;
+		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_read == -1)
+		{
+			free(line);
+			return (NULL);
+		}
+	}
+	return (line);
 }
 
 char	*buff_to_storage(char *buffer)
@@ -40,166 +63,44 @@ char	*buff_to_storage(char *buffer)
 	storage = malloc(BUFFER_SIZE + 1);
 	if (storage == NULL)
 		return (NULL);
-	while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
+	while (i < BUFFER_SIZE && buffer[i] == '\0')
 		i++;
-	while (i < BUFFER_SIZE) //zolang we niet aan het einde van de buffer zijn
+	while (i < BUFFER_SIZE)
 	{
 		storage[j] = buffer[i];
 		buffer[i] = '\0';
 		i++;
 		j++;
 		if (storage[j - 1] == '\n')
-			break; // eerste stukje van buffer gereturned, tot dat punt zijn nu \0's
+			break ;
 	}
-	storage[j] = '\0'; // terminate storage
-	return (storage); // hele of stukje buffer wordt opgestuurd
+	storage[j] = '\0';
+	return (storage);
 }
 
-ssize_t	read_if_buff_empty(int fd, char *buffer, ssize_t bytes_read)
-{
-	size_t	i;
-
-	i = 0;
-	while (i < BUFFER_SIZE && buffer[i] == '\0') // skip wat we al opgestuurd hebben, edge case: buffer is precies line
-		i++;
-	if (i == BUFFER_SIZE) // wanneer hele buffer gevuld is met \0s
-		bytes_read = read(fd, buffer, BUFFER_SIZE);
-	return (bytes_read);
-}
-
-char	*make_line(int fd, char *buffer, ssize_t bytes_read) // returns hele line
-{
-	char	*storage;
-	char	*line; //groeit
-
-	line = NULL;
-	bytes_read = read_if_buff_empty(fd, buffer, bytes_read);
-	if (bytes_read  == -1)
-		return (NULL);
-	while (bytes_read > 0)
-	{
-		storage = buff_to_storage(buffer); // we krijgen wat storage binnen
-		if (storage == NULL)
-			return (NULL);
-		line = storage_to_line(storage, line); //plak steeds een stukje storage aan groeiende line
-		if (line == NULL)
-			return (NULL);
-		if (nl_check(line) == 1) // return wanneer \n gevonden is, in while loop verchil??
-			break;
-		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		if (bytes_read == -1)
-		{
-			free(line);
-			return (NULL);
-		}
-	}
-	return (line);
-}
-
-char	*line_alloc(char *storage, char* old_line)
-{
-	char	*line;
-	size_t	line_len;
-
-	if (old_line == NULL)
-		line_len = 0;
-	else
-		line_len = ft_strlen(old_line);
-	line = malloc(line_len + ft_strlen(storage) + 1); // line neemt huidige lengte van line + storage + \0 aan
-	if (line == NULL)
-	{
-		free(old_line);
-		free(storage);
-		return (NULL);
-	}
-	return (line);
-}
-
-char	*storage_to_line(char *storage, char *old_line) // join en alloceer
+char	*storage_to_line(char *storage, char *old_line)
 {
 	char	*line;
 	size_t	i;
 	size_t	j;
-	// size_t	line_len;
 
 	i = 0;
 	j = 0;
-	// if (old_line == NULL)
-	// 	line_len = 0;
-	// else
-	// 	line_len = ft_strlen(old_line);
-	// line = malloc(line_len + ft_strlen(storage) + 1); // line neemt huidige lengte van line + storage + \0 aan
-	// if (line == NULL)
-	// {
-	// 	free(old_line);
-	// 	free(storage);
-	// 	return (NULL);
-	// }
 	line = line_alloc(storage, old_line);
+	if (line == NULL)
+		return (NULL);
 	while (old_line != NULL && old_line[i] != '\0')
 	{
 		line[i] = old_line[i];
 		i++;
 	}
 	free(old_line);
-	while (storage[j] != '\0') // plak stukje storage aan lijn
+	while (storage[j] != '\0')
 	{
-		line[i + j] = storage[j]; // voeg oude toe
+		line[i + j] = storage[j];
 		j++;
 	}
-	line[i + j] = '\0'; // terminate line
-	free(storage); //weg halen wat we hebben toegevoegd
-	return (line); // return geupdatete line
+	line[i + j] = '\0';
+	free(storage);
+	return (line);
 }
-
-size_t	ft_strlen(char *str)
-{
-	size_t	length;
-	
-	length = 0;
-	while (str[length] != '\0')
-		length++;
-	return (length);
-}
-
-int	nl_check(char *line)
-{
-	size_t	i;
-
-	i = 0;
-	while (line[i] != '\0')
-	{
-		if (line[i] == '\n')
-			return (1);
-		i++;
-	}
-	return (0);
-}
-
-// int	main()
-// {
-// 	int fd = open("fd.txt", O_RDONLY);
-// 	char *line = get_next_line(fd);
-// 	while (line)
-// 	{
-// 		printf("%s", line);
-// 		free(line);
-// 		line = get_next_line(fd);
-// 	}
-// 	free(line);
-// 	close(fd);
-// 	return (0);
-// }
-
-// int main()
-// {
-// 	char *line;
-// 	int fd = open("fd.txt", O_RDONLY);
-
-// 	line = get_next_line(fd);
-// 	printf("%s", line);
-// 	free(line);
-// 	line = get_next_line(fd);
-// 	printf("%s", line);
-	
-// }
